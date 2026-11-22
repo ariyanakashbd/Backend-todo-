@@ -9,7 +9,7 @@ let newTodo = new Schema({
     priority :{
         type : String,
         required : true,
-        enum : ['none','High','Meduim','Low'],
+        enum : ['None','High','Medium','Low'],
 
     },
     description : {
@@ -20,8 +20,8 @@ let newTodo = new Schema({
     status :{
         type : String,
         required : true,
-        enum : ['pending','completed'],
-        default : 'pending',
+        enum : ['Pending','Completed'],
+        default : 'Pending',
     },
 },{
     timestamps : true,
