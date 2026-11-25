@@ -1,6 +1,7 @@
 const User = require('../models/registartionModel');
 const nodemailer = require("nodemailer");
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const bcrypt = require('bcrypt');
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -69,6 +70,10 @@ async function registrationController(req,res) {
         });
     };
 
+   //hash password 
+
+   const hashPassword = await bcrypt.hash(password,10);
+
     try {
   const info = await transporter.sendMail({
     from: '"Example Team" <ariyanakash01303@gmail.com>', 
@@ -85,8 +90,8 @@ async function registrationController(req,res) {
 
 let dataCreate = new User({
      name : name,
-     password : password,
      email : email,
+     password : hashPassword,
      gender : gender,
      terms : terms
 });

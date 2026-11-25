@@ -1,5 +1,6 @@
 const User = require('../models/registartionModel');
 const nodemailer = require("nodemailer");
+const bcrypt = require('bcrypt');
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -28,18 +29,23 @@ const transporter = nodemailer.createTransport({
             message : 'Please inter your vaild email and password'
         });
     };
-    if(!password){
-        return res.json({
-            success : false,
-            message : 'Please inter your vaild email and password'
-        });
-    };
+    //hash password chack 
+
+  
 
     let userExist = await User.findOne({email : email});
     if(!userExist){
         return res.json({
             success : false,
             message : 'Invalid email or password'
+        });
+    };
+      const isMatch = await bcrypt.compare(password, userExist.password);
+
+    if(!isMatch){
+        return res.status(409).json({
+            success : false,
+            message : 'invalid email or password!'
         });
     };
     if(userExist.password !== password){
