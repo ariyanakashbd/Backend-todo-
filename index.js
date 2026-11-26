@@ -6,7 +6,7 @@ app.use(cors());
 app.use(express.json());
 const mongodbConnect = require('./config/mongodb');
 mongodbConnect();
-const registrationController = require('./controllers/registrationController');
+const {registrationController,otpVerification} = require('./controllers/registrationController');
 const loginController =require('./controllers/loginController');
 const newCreate = require('./controllers/createTodo');
 const read = require('./controllers/readTodo');
@@ -36,6 +36,10 @@ app.post('/todo-create',newCreate);
 app.get('/data-read',gard,read);
 app.delete('/delete/:id',todoDelete);
 app.post('/update/:id',todoUpdate);
+app.post('/otp-verify',otpVerification)
+
+
+
 app.post('/uplead',upload.single("image") ,(req,res) =>{
     try{
       if(!req.file){

@@ -11,23 +11,30 @@ let registrationSchema = new Schema({
         required : true,
         trim : true,
         unique : true,
-        lowarecase : true,
+        lowercase : true,
     },
     password :{
         type : String,
         required : true,
-        min : 6
     },
     gender :{
         type : String,
         required : true,
-        emun :['male','female','others'],
+        enum :['male','female','others'],
     },
     terms :{
         type : Boolean,
         default : false,
         required : true,
     },
+    otp :{
+        type : String,
+        required : true,
+    },
+    isVerified : {
+        type : Boolean,
+        default : false,
+    }
 });
 
 module.exports = mongoose.model('User',registrationSchema);

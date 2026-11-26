@@ -2,16 +2,18 @@ const User = require('../models/registartionModel');
 const nodemailer = require("nodemailer");
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const bcrypt = require('bcrypt');
+const otpGenerator = require('otp-generator')
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
   port: 587,
   secure: false, 
   auth: {
-    user: 'ariyanakash01303@gmail.com',
-    pass: 'ogle iffv guns qchz',
+    user:process.env.EMAIL_USER,
+    pass:process.env.APP_PASSWORD
   },
 });
+// Registration controller
 
 async function registrationController(req,res) {
 
@@ -74,27 +76,47 @@ async function registrationController(req,res) {
 
    const hashPassword = await bcrypt.hash(password,10);
 
-    try {
-  const info = await transporter.sendMail({
-    from: '"Example Team" <ariyanakash01303@gmail.com>', 
-    to: email, 
-    subject: "Hello", 
-    html: `<body style="margin:0;padding:20px;background:#f1f5f9;font-family:Arial,sans-serif"><div style="max-width:600px;margin:auto;background:#fff;border-radius:12px;overflow:hidden"><div style="background:#2563eb;padding:30px;text-align:center;color:#fff"><h1 style="margin:0">Job Proposal</h1><p style="margin:10px 0 0">A Professional Opportunity</p></div><div style="padding:30px"><h2 style="color:#111827">Hello ${name},</h2><p style="color:#4b5563;line-height:1.7">We are excited to share a new job opportunity with you. Based on your skills and experience, we believe you could be a great fit for our team.</p><div style="background:#eff6ff;padding:20px;border-radius:8px;margin:25px 0"><h3 style="color:#1e40af;margin-top:0">Job Details</h3><p><strong>Position:</strong>{{jobTitle}}</p><p><strong>Company:</strong>{{companyName}}</p><p><strong>Salary:</strong>{{salary}}</p><p><strong>Location:</strong>{{location}}</p></div><p style="color:#4b5563;line-height:1.7">If you are interested in this opportunity, please click the button below to review the proposal.</p><div style="text-align:center;margin:30px 0"><a href="{{proposalLink}}" style="background:#2563eb;color:#fff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:700">View Job Proposal</a></div><p style="color:#4b5563">Best Regards,</p><h3 style="color:#111827;margin-bottom:5px">{{senderName}}</h3><p style="color:#64748b;margin-top:0">{{companyName}}</p></div><div style="background:#f8fafc;padding:20px;text-align:center"><p style="font-size:12px;color:#94a3b8">This is an automated email. Please do not reply directly.</p></div></div></body>`, 
-  });
+   //OTP genaretor
 
-  console.log("Message sent: %s", info.messageId);
-  console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-} catch (err) {
-  console.error("Error while sending mail:", err);
-};
+   let otp = otpGenerator.generate(6, 
+        {
+            upperCaseAlphabets: false,
+            specialChars: false,
+            lowerCaseAlphabets: false,
+            digits: true,
+        });
+
+ // data save
 
 let dataCreate = new User({
      name : name,
      email : email,
      password : hashPassword,
      gender : gender,
-     terms : terms
+     terms : terms,
+     otp : otp
 });
+
+//nodemailer email send
+
+try {
+  const info = await transporter.sendMail({
+    from: '"Example Team" <ariyanakash01303@gmail.com>', 
+    to: email, 
+    subject:name, 
+    html: `<a href ="http://localhost:5000/otp-verify"></<h3 style="text-align:center">Your Verification Code</h3><div style="background:#eff6ff;padding:20px;text-align:center;border-radius:8px"><h1 style="color:#2563eb;letter-spacing:8px">${otp}</h1></div><p style="text-align:center">Enter this code on the verification page.</p><div style="text-align:center;margin:25px 0"><a href="http://localhost:5173/otp-verify" style="background:#2563eb;color:#fff;padding:14px 30px;text-decoration:none;border-radius:6px;display:inline-block">Click Here</a></div>`, 
+  });
+
+  console.log("Message sent: %s", info.messageId);
+  console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+        success: false,
+        message: 'Email sending failed'
+    });
+}
+
 
 await dataCreate.save();
 return res.json({
@@ -104,4 +126,27 @@ return res.json({
 
 };
 
-module.exports = registrationController;
+// otp controller
+
+let otpVerification = async (req,res) =>{
+   let {email,otp} = req.body;
+   let data = await User.findOne({otp : otp,email : email,isVerified : false});
+
+   if(data){
+
+   await User.findOneAndUpdate({otp : otp}, {isVerified : true, otp : ''});
+
+  return res.status(200).json({
+    success : true,
+    message : 'User Verified '
+   });
+
+   }else{
+    res.status(400).json({
+        success : false,
+        message : 'otp invalid'
+    });
+
+   };
+}
+module.exports = {registrationController,otpVerification};
